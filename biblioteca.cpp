@@ -41,13 +41,11 @@ struct lista_l_invertida{
 int abrir_arquivo(FILE **p_arq, char nome_arq[]);
 //void criar_arquivo(FILE *p_arq, char nome_arq[]);
 void fechar_arquivo(FILE **p_arq);
-int carregar_arquivo();
-/*int pegar_registro(FILE **p_arq, char *p_reg);
-int inserir(FILE **arq, char nome_arq[], int tam_vet_inserir);
 int dump_arquivo(FILE **arq);
-int remover(FILE **arq);
-int compactar(FILE **arq);
-int deletar_arquivo(char arq[]);
+int carregar_arquivo();
+int pegar_registro(FILE **p_arq, char *p_reg);
+/*
+int inserir(FILE **arq, char nome_arq[], int tam_vet_inserir);
 */
 int main(){
   int resp, sair = 0;
@@ -85,7 +83,7 @@ int main(){
 				break;
 			}
 		  	case 5:{
-		    //dump_arquivo(&arq);
+		    dump_arquivo(&arq);
 				break;
 			}
 		  	case 6:{
@@ -184,5 +182,74 @@ int carregar_arquivo(){
   }
   system("pause");
   return tam_vet_inserir;
+}
+
+//faz o dump do arquivo passado por parametro.
+int dump_arquivo(FILE **arq){
+	char *pch, registro[119], tam_reg, arq_nome[16]="\0";
+	int aberto, cont_insercao, cont_remocao, offset, resp;
+	system("cls");
+	do{
+		printf("\nDigite qual arquivo deseja carregar: ");
+		printf("\n1 - Principal");
+		printf("\n2 - Ínfice Primário");
+		printf("\n3 - Índice Secundário");
+		printf("\n4 - Lista Invertida: ");
+		scanf("%d",&resp);
+	}while(resp < 1 || resp > 4);
+
+	if(resp == 1){
+		strcpy(arq_nome,"livros.bin");
+	}else if (resp == 2){
+		strcpy(arq_nome,"busca_p.bin");
+	}else if (resp == 3){
+		strcpy(arq_nome,"busca_s.bin");
+	}else{
+		strcpy(arq_nome,"l_invertida.bin");
+	}
+
+	aberto = abrir_arquivo(arq, arq_nome);
+	if(!aberto){
+		printf("\nimpossivel abrir o arquivo\n");
+		system("pause");
+		return 0;
+	}
+	fseek(*arq,0,0);
+	if(resp == 1){
+		fread(&cont_insercao, sizeof(int), 1, *arq);
+ 		fread(&cont_remocao, sizeof(int), 1, *arq);
+ 		fread(&offset, sizeof(int), 1, *arq);
+ 		printf("contador insercao: %d\n", cont_insercao);
+ 		printf("contador remocao: %d\n", cont_remocao);
+		printf("offset: %d\n\n", offset); 	
+	}
+
+ 	tam_reg = pegar_registro(arq,registro);
+	while (tam_reg > 0){
+		pch = strtok(registro,"|");
+			while (pch != NULL){
+				exibindo o hexadecimal de cada caractere
+				for(int i = 0; i < strlen(pch); i++)
+					printf("%X ", pch[i]);
+				printf("- %s\n",pch);
+				pch = strtok(NULL,"|");
+			}
+		printf("\n");
+	  tam_reg = pegar_registro(arq,registro);
+	}
+	printf("\n");
+	system("pause");
+	fclose(*arq);
+	return 1;
+}
+
+//devolve o tamanho dos registros e obtem o registro
+int pegar_registro(FILE **p_arq, char *p_reg){
+  int bytes;
+     
+  if (!(fread(&bytes, sizeof(int), 1, *p_arq)))
+    return 0;
+  fread(p_reg, bytes, 1, *p_arq);
+  return bytes;
 }
 
