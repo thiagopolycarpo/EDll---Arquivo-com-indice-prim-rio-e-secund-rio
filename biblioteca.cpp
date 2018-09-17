@@ -56,7 +56,10 @@ int carregar_arquivo();
 int pegar_registro(FILE **p_arq, char *p_reg);
 int inserir(int tam_vet_inserir);
 void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_registro);
+void inserirNoArquivoChaveSecundaria(int contador_insercao);
 void mergeSortParaArquivoDeChavePrimaria(index *est, int posicaoInicio, int posicaoFim);
+void mergeSortParaArquivoDeChaveSecundaria(index_autor *est, int posicaoInicio, int posicaoFim);
+
 
 int main(){
   int resp, sair = 0;
@@ -147,6 +150,7 @@ int criar_arquivo(char nome_arq[]){
 //carrega arquivo biblioteca.bin e remove.bin
 int carregar_arquivo(){
   char arq_cadastro[]="biblioteca.bin", arq_busca_p[]="busca_p.bin", arq_busca_s[]="busca_s.bin", abrir[] = "r+b";
+  char arq_primaria[]= "arq_chave_p.bin";
   FILE *arq;
   int i, tam_vet_inserir = 0;
   
@@ -186,6 +190,34 @@ int carregar_arquivo(){
 		printf("\nDados de busca secundaria carregados!!\n\n ");
 		fechar_arquivo(&arq);
   }
+  
+  //carrega os dados do arquivo de chave primaria(isbn) no vetor de struct 
+  if((arq = fopen(arq_primaria, "r+b")) != NULL){
+  	int i = 0; 
+		fseek(arq, 0, 0);
+		//pegando os registros do arquivo de chave primaria
+		while(fread(&est_isbn[i], sizeof(struct tipo_index) , 1, arq)){
+			printf("isbn: %s\n", est_isbn[i].isbn);
+			printf("posicao: %d\n", est_isbn[i].posicao);
+			i++;
+		}
+		printf("Registros de chave primaria carrgados\n\n");
+		fclose(arq);
+	}
+	
+	 //carrega os dados do arquivo de chave secundaria(autor) no vetor de struct 
+	if((arq = fopen("arq_chave_s.bin", "r+b")) != NULL){
+  	int i = 0; 
+		fseek(arq, 0, 0);
+		//pegando os registros do arquivo de chave primaria
+		while(fread(&est_autor[i], sizeof(index_autor) , 1, arq)){
+			printf("autor: %s\n", est_autor[i].autor);
+			printf("posicao da lista: %d\n", est_autor[i].p_list);
+			i++;
+		}
+		printf("Registros de chave secundaria carrgados\n\n");
+		fclose(arq);
+	}
   
   system("pause");
   return tam_vet_inserir;
@@ -295,6 +327,7 @@ int inserir(int qtd_livros_carregados){
 		fclose(arq);
 	
 		InserindoNoArquivoDeChavePrimaria(cont_registro, posicao_registro);
+		inserirNoArquivoChaveSecundaria(cont_registro);
 		
 		//incrementando contador de inserção
 		arq = fopen("livros.bin", leitura);
@@ -314,38 +347,52 @@ int inserir(int qtd_livros_carregados){
 void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_registro){
 	char nome_arq[] = "arq_chave_p.bin", atualizar[] = "ab", leitura[] = "r+b", escrever[] = "wb"; 
 	FILE *arq;
-	int i = 0, j;
+	int i;
 	
 	if((fopen(nome_arq, "r+b")) == NULL){
 		criar_arquivo(nome_arq);
 	}
 	
-	abrir_arquivo(&arq, nome_arq, leitura);
-	fseek(arq, 0, 0);
+	//copiando o registro para a estrutura da chave primaria
+	est_isbn[contador_insercao].posicao = posicao_registro;
+	strcpy(est_isbn[contador_insercao].isbn, arq_livros[contador_insercao].isbn);
 	
-	//pegando os registros do arquivo de chave primaria
-	while(fread(&est_isbn[i], sizeof(struct tipo_index) , 1, arq)){
-		printf("isbn: %s\n", est_isbn[i].isbn);
-		printf("posicao: %d\n", est_isbn[i].posicao);
-		i++;
-	}
-	fclose(arq);
-	
-	est_isbn[i].posicao = posicao_registro;
-	strcpy(est_isbn[i].isbn, arq_livros[contador_insercao].isbn);
-	
-	mergeSortParaArquivoDeChavePrimaria(est_isbn, 0, i);
-	
+	//ordenando registros
+	mergeSortParaArquivoDeChavePrimaria(est_isbn, 0, contador_insercao);
+
+	//reescrevendo arquivo
 	abrir_arquivo(&arq, nome_arq, escrever);
-	/*printf("\nesse eh o isbn do registro --> %s \n", arq_livros[contador_insercao].isbn);
-	printf("posicao do registro no arquivo: %d\n", posicao_registro);*/
-	
-	for(j = 0; j <= i; j++)
-		fwrite(&est_isbn[j], sizeof(struct tipo_index), 1, arq);
-	
+	for(i = 0; i <= contador_insercao; i++)
+		fwrite(&est_isbn[i], sizeof(struct tipo_index), 1, arq);
 	fclose(arq);
 }
 
+void inserirNoArquivoChaveSecundaria(int contador_insercao){
+	char nome_arq[] = "arq_chave_s.bin", escrever[]= "wb";
+	FILE *arq;
+	int i;
+		
+	if((fopen(nome_arq, "r+b")) == NULL){
+		criar_arquivo(nome_arq);
+	}
+	
+	//copiando o registro para o vetor de struct da chave secundaria
+	est_autor[contador_insercao].p_list = -1;
+	strcpy(est_autor[contador_insercao].autor, arq_livros[contador_insercao].autor);
+	
+	//ordenando
+	mergeSortParaArquivoDeChaveSecundaria(est_autor, 0, contador_insercao);
+	
+	//abrindo arquivo em modo de escrita
+	abrir_arquivo(&arq, nome_arq, escrever);
+	//reescrevendo o arquivo de chave secundaria
+	for(i = 0; i <= contador_insercao; i++)
+		fwrite(&est_autor[i], sizeof(index_autor), 1, arq);
+	
+	fechar_arquivo(&arq);	
+}
+
+//ordenar arquivo de chave primaria(isbn)
 void mergeSortParaArquivoDeChavePrimaria(index *est, int posicaoInicio, int posicaoFim){
     int i, j, k, metadeTamanho;
     if(posicaoInicio == posicaoFim) return;
@@ -401,4 +448,62 @@ void mergeSortParaArquivoDeChavePrimaria(index *est, int posicaoInicio, int posi
     }
     free(est_temp);
 }
+
+//ordenar arquivo de chave secundaria(autor)
+void mergeSortParaArquivoDeChaveSecundaria(index_autor *est, int posicaoInicio, int posicaoFim){
+    int i, j, k, metadeTamanho;
+    if(posicaoInicio == posicaoFim) return;
+    metadeTamanho = (posicaoInicio + posicaoFim ) / 2;
+    index_autor *est_temp;
+    
+    mergeSortParaArquivoDeChaveSecundaria(est, posicaoInicio, metadeTamanho);
+    mergeSortParaArquivoDeChaveSecundaria(est, metadeTamanho + 1, posicaoFim);
+
+    i = posicaoInicio;
+    j = metadeTamanho + 1;
+    k = 0;
+    est_temp = (index_autor *) malloc(sizeof(index_autor) * (posicaoFim - posicaoInicio + 1));
+
+    while(i < metadeTamanho + 1 || j  < posicaoFim + 1) {
+        if (i == metadeTamanho + 1 ) { 
+            strcpy(est_temp[k].autor, est[j].autor);
+            est_temp[k].p_list = est[j].p_list;
+            j++;
+            k++;
+        }
+        else {
+            if (j == posicaoFim + 1) {
+                //vetorTemp[k] = vetor[i];
+                strcpy(est_temp[k].autor, est[i].autor);
+            		est_temp[k].p_list = est[i].p_list;
+                i++;
+                k++;
+            }
+            else {
+                if ((strcmp(est[i].autor, est[j].autor)) < 0) {
+                    //vetorTemp[k] = vetor[i];
+                    strcpy(est_temp[k].autor, est[i].autor);
+            				est_temp[k].p_list = est[i].p_list;
+                    i++;
+                    k++;
+                }
+                else {
+                    //vetorTemp[k] = vetor[j];
+                    strcpy(est_temp[k].autor, est[j].autor);
+            				est_temp[k].p_list = est[j].p_list;
+                    j++;
+                    k++;
+                }
+            }
+        }
+
+    }
+    for(i = posicaoInicio; i <= posicaoFim; i++) {
+        //vetor[i] = vetorTemp[i - posicaoInicio];
+        strcpy(est[i].autor, est_temp[i - posicaoInicio].autor);
+      	est[i].p_list = est_temp[i - posicaoInicio].p_list;
+    }
+    free(est_temp);
+}
+
 
