@@ -46,6 +46,8 @@ struct lista_l_invertida{
   int  prox;
 }l_invertida[TAM_STRUCT];
 
+char atualizar[] = "ab", leitura[] = "r+b", escrever[] = "wb";
+
 
 //funcoes
 int abrir_arquivo(FILE **p_arq, char nome_arq[], char tipo_abertura[]);
@@ -128,7 +130,7 @@ int abrir_arquivo(FILE **p_arq, char nome_arq[], char tipo_abertura[]){
 
 //cria arquivo livros.bin e adiciona o byte int do contador e o byte offset
 int criar_arquivo(char nome_arq[]){
-  int cont=0;
+  int cont=0, atualizado = 1;
   FILE *arq;
   
   if((arq = fopen(nome_arq,"w+b")) == NULL){
@@ -141,6 +143,18 @@ int criar_arquivo(char nome_arq[]){
   if(!strcmp(nome_arq, "livros.bin")){
 	  //reserva os 4 primeiros bytes para o contador
 	  fwrite(&cont,sizeof(int),1, arq);//cont do arquivo de insercao
+	}
+	
+	//escrevendo flag de atualização no arquivo de chave primaria
+	if(!strcmp(nome_arq, "arq_chave_p.bin")){
+	  //reserva os 4 primeiros bytes para o contador
+	  fwrite(&atualizado,sizeof(int),1, arq);//cont do arquivo de insercao
+	}
+	
+	//escrevendo flag de atualização no arquivo de chave secundaria
+	if(!strcmp(nome_arq, "arq_chave_s.bin")){
+	  //reserva os 4 primeiros bytes para o contador
+	  fwrite(&atualizado,sizeof(int),1, arq);//cont do arquivo de insercao
 	}
 
   fclose(arq);
@@ -194,7 +208,7 @@ int carregar_arquivo(){
   //carrega os dados do arquivo de chave primaria(isbn) no vetor de struct 
   if((arq = fopen(arq_primaria, "r+b")) != NULL){
   	int i = 0; 
-		fseek(arq, 0, 0);
+		fseek(arq, 4, 0);
 		//pegando os registros do arquivo de chave primaria
 		while(fread(&est_isbn[i], sizeof(struct tipo_index) , 1, arq)){
 			printf("isbn: %s\n", est_isbn[i].isbn);
@@ -208,7 +222,7 @@ int carregar_arquivo(){
 	 //carrega os dados do arquivo de chave secundaria(autor) no vetor de struct 
 	if((arq = fopen("arq_chave_s.bin", "r+b")) != NULL){
   	int i = 0; 
-		fseek(arq, 0, 0);
+		fseek(arq, 4, 0);
 		//pegando os registros do arquivo de chave primaria
 		while(fread(&est_autor[i], sizeof(index_autor) , 1, arq)){
 			printf("autor: %s\n", est_autor[i].autor);
@@ -347,21 +361,35 @@ int inserir(int qtd_livros_carregados){
 void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_registro){
 	char nome_arq[] = "arq_chave_p.bin", atualizar[] = "ab", leitura[] = "r+b", escrever[] = "wb"; 
 	FILE *arq;
-	int i;
+	int i, atualizado;
 	
 	if((fopen(nome_arq, "r+b")) == NULL){
 		criar_arquivo(nome_arq);
 	}
 	
+	//abrindo para leitura do flag de atualização
+	abrir_arquivo(&arq, nome_arq, leitura);
+	fread(&atualizado, sizeof(int), 1, arq);
+	printf("Atualizado: %d\n", atualizado);
+	
+	
 	//copiando o registro para a estrutura da chave primaria
 	est_isbn[contador_insercao].posicao = posicao_registro;
 	strcpy(est_isbn[contador_insercao].isbn, arq_livros[contador_insercao].isbn);
+	//alterando flag de atualização pois copia do arquivo em memoria foi modificada
+	atualizado = 0;
+	fseek(arq,0,0);
+	fwrite(&atualizado, sizeof(int), 1, arq);
+	fclose(arq);
 	
 	//ordenando registros
 	mergeSortParaArquivoDeChavePrimaria(est_isbn, 0, contador_insercao);
 
 	//reescrevendo arquivo
 	abrir_arquivo(&arq, nome_arq, escrever);
+	//Colando flag de atualização em 1, pois arquivo foi reescrito
+	atualizado = 1;
+	fwrite(&atualizado, sizeof(int), 1, arq);	
 	for(i = 0; i <= contador_insercao; i++)
 		fwrite(&est_isbn[i], sizeof(struct tipo_index), 1, arq);
 	fclose(arq);
@@ -370,25 +398,37 @@ void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_regist
 void inserirNoArquivoChaveSecundaria(int contador_insercao){
 	char nome_arq[] = "arq_chave_s.bin", escrever[]= "wb";
 	FILE *arq;
-	int i;
+	int i, atualizado;
 		
 	if((fopen(nome_arq, "r+b")) == NULL){
 		criar_arquivo(nome_arq);
 	}
 	
+	//abrindo para leitura do flag de atualização
+	abrir_arquivo(&arq, nome_arq, leitura);
+	fread(&atualizado, sizeof(int), 1, arq);
+	printf("Atualizado: %d\n", atualizado);
+
+	
 	//copiando o registro para o vetor de struct da chave secundaria
 	est_autor[contador_insercao].p_list = -1;
 	strcpy(est_autor[contador_insercao].autor, arq_livros[contador_insercao].autor);
+	//alterando flag de atualização, pois copia do arquivo em memoria foi modificada
+	atualizado = 0;
+	fseek(arq,0,0);
+	fwrite(&atualizado, sizeof(int), 1, arq);
+	fclose(arq);
 	
 	//ordenando
 	mergeSortParaArquivoDeChaveSecundaria(est_autor, 0, contador_insercao);
 	
-	//abrindo arquivo em modo de escrita
+	//reescrevendo arquivo de chave secundaria
 	abrir_arquivo(&arq, nome_arq, escrever);
-	//reescrevendo o arquivo de chave secundaria
+	//Colando flag de atualização em 1, pois arquivo foi reescrito
+	atualizado = 1;
+	fwrite(&atualizado, sizeof(int), 1, arq);
 	for(i = 0; i <= contador_insercao; i++)
 		fwrite(&est_autor[i], sizeof(index_autor), 1, arq);
-	
 	fechar_arquivo(&arq);	
 }
 
