@@ -487,11 +487,7 @@ int inserir_lista_invertida(int contador_insercao, char isbn[], int posicao_do_a
 	//copiando dados para o vetor de estrutura da lista invertida
 	strcpy(l_invertida[contador_insercao].isbn, isbn); 
 	
-	if(posicao_do_anterior < 0)
-		l_invertida[contador_insercao].prox = -1;
-	else{
-		l_invertida[contador_insercao].prox = posicao_do_anterior;
-	}
+	l_invertida[contador_insercao].prox = posicao_do_anterior;
 	
 	//escrevendo na lista invertida
 	abrir_arquivo(&arq, nome_arq, atualizar);
