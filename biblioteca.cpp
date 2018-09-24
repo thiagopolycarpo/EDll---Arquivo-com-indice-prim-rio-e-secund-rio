@@ -61,6 +61,7 @@ int dump_arquivo(int resp);
 int carregar_arquivo(int resp);
 int pegar_registro(FILE **p_arq, char *p_reg);
 void buscaPrimaria();
+void buscaSecundaria();
 //insercoes
 int inserir(int tam_vet_inserir);
 void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_registro);
@@ -98,7 +99,7 @@ int main(){
 				break;
 			}
 		  	case 3: {
-		  	//compactar(&arq);
+		  	buscaSecundaria();
 		  		break;
 		  	}
 		  	case 4:{
@@ -184,11 +185,11 @@ int carregar_arquivo(int resp){
 	  if(abrir_arquivo(&arq, arq_cadastro, abrir)){
 	  	i=0;
 	    while(fread(&arq_livros[i], sizeof(livro), 1, arq)){
-	      printf("\n%s | %s | %s | %s", arq_livros[i].isbn, arq_livros[i].titulo, arq_livros[i].autor, arq_livros[i].ano);	
+	   //   printf("\n%s | %s | %s | %s", arq_livros[i].isbn, arq_livros[i].titulo, arq_livros[i].autor, arq_livros[i].ano);	
 	      i++;  
 	    }
-			printf("\ntamanho vetor insercao: %d",i);
-	    printf("\nDados de insercao carregados!!\n");
+		//	printf("\ntamanho vetor insercao: %d",i);
+	  //  printf("\nDados de insercao carregados!!\n");
 	    fechar_arquivo(&arq);
 	  	tam_vet_inserir = i;  
 	  }
@@ -201,7 +202,7 @@ int carregar_arquivo(int resp){
 			  printf("\n%s ", busca_p[i].isbn);
 			  i++;
 			}
-			printf("\nDados de busca primaria carregados!!\n ");
+		//	printf("\nDados de busca primaria carregados!!\n ");
 			fechar_arquivo(&arq);
 		}
   	} 
@@ -211,10 +212,10 @@ int carregar_arquivo(int resp){
 	  	if(abrir_arquivo(&arq, arq_busca_s, abrir)){
 	    i=0;
 			while(fread(&busca_s[i], sizeof(struct buscaSecundaria), 1, arq)){
-			  printf("\n%s ", busca_s[i].autor);
+	//		  printf("\n%s ", busca_s[i].autor);
 			  i++;
 			}
-			printf("\nDados de busca secundaria carregados!!\n\n ");
+		//	printf("\nDados de busca secundaria carregados!!\n\n ");
 			fechar_arquivo(&arq);
 	  	}
   	}
@@ -226,11 +227,11 @@ int carregar_arquivo(int resp){
 			fseek(arq, 8, 0);
 			//pegando os registros do arquivo de chave primaria
 			while(fread(&est_isbn[i], sizeof(struct tipo_index) , 1, arq)){
-				printf("isbn: %s\n", est_isbn[i].isbn);
-				printf("posicao: %d\n", est_isbn[i].posicao);
+		//		printf("isbn: %s\n", est_isbn[i].isbn);
+		//		printf("posicao: %d\n", est_isbn[i].posicao);
 				i++;
 			}
-			printf("Registros de chave primaria carregados\n\n");
+		//	printf("Registros de chave primaria carregados\n\n");
 			fclose(arq);
 		}
 	}	
@@ -240,32 +241,29 @@ int carregar_arquivo(int resp){
 		if((arq = fopen("arq_chave_s.bin", "r+b")) != NULL){
 	  	 i = 0; 
 			fseek(arq, 8, 0);
-			//pegando os registros do arquivo de chave primaria
+			//pegando os registros do arquivo de chave secundaria
 			while(fread(&est_autor[i], sizeof(index_autor) , 1, arq)){
-				printf("autor: %s\n", est_autor[i].autor);
-				printf("posicao da lista: %d\n", est_autor[i].p_list);
+		//		printf("autor: %s\n", est_autor[i].autor);
+		//		printf("posicao da lista: %d\n", est_autor[i].p_list);
 				i++;
 			}
-			printf("Registros de chave secundaria carrgados\n\n");
+		//	printf("Registros de chave secundaria carregados\n\n");
 			fclose(arq);
 			qtd_chave_s = i;
 		}
-	}	
-	
-	if(resp == 4 || todos == 0){
 		if((arq = fopen("lista_invertida.bin", "r+b")) != NULL){
 	  	int i = 0; 
-			//pegando os registros do arquivo de chave primaria
+			//pegando os registros do arquivo de lista invertida
 			while(fread(&l_invertida[i], sizeof(invertida) , 1, arq)){
-				printf("autor: %s\n", l_invertida[i].isbn);
-				printf("proximo: %d\n",l_invertida[i].prox);
+			//	printf("autor: %s\n", l_invertida[i].isbn);
+			//	printf("proximo: %d\n",l_invertida[i].prox);
 				i++;
 			}
-			printf("Registros da lista invertida carregados carrgados\n\n");
+		//	printf("Registros da lista invertida carregados\n\n");
 			fclose(arq);
 		}
 	}
-  
+  printf("\n");
   system("pause");
   return tam_vet_inserir;
 }
@@ -345,8 +343,8 @@ int pegar_registro(FILE **p_arq, char *p_reg){
 
 void buscaPrimaria(){
   	FILE *arq;
-  	int resp=2, cont_chave_p,i,cont_livros, tam_reg,teste;
-  	char abrir[] = "r+b", arquivo_livros[]= "livros.bin", arq_chave_p[]="arq_chave_p.bin",gravar[]="wb";
+  	int resp=2, cont_chave_p,i,cont_livros, tam_reg;
+  	char abrir[] = "r+b", arquivo_livros[]= "livros.bin", arq_chave_p[]="arq_chave_p.bin";
   	char *pch, registro[119];
   	//carrega arquivos arq_chave_p e busca_p no vetor de struct
   	carregar_arquivo(resp);
@@ -374,12 +372,30 @@ void buscaPrimaria(){
   	}
   	fclose(arq);
   	//abre arq_chave_p pra atualizar o contador da pesquisa
-  	if(abrir_arquivo(&arq, arq_chave_p, gravar)){
+  	if(abrir_arquivo(&arq, arq_chave_p, abrir)){
 	  	fseek(arq,4,0);
 	  	cont_chave_p++;
 	  	fwrite(&cont_chave_p,sizeof(int),1,arq);
 	  	fclose(arq);
   	}
+}
+
+void buscaSecundaria(){
+	FILE *arq;
+	int resp=3,cont_chave_s,i,cont_livros, tam_reg;
+  	char abrir[]="r+b", arquivo_livros[]= "livros.bin", arq_chave_s[]="arq_chave_s.bin";
+  	char *pch, registro[119];
+
+	//carrega arquivos arq_chave_s e busca_s e lista invertida no vetor de struct
+  	carregar_arquivo(resp);
+  	//abre arq_chave_s pra pegar o contador de pesquisa do busca_s
+  	abrir_arquivo(&arq, arq_chave_s, abrir);
+  	fread(&cont_chave_s, sizeof(int),1,arq);
+  	fread(&cont_chave_s, sizeof(int),1,arq);
+  	fclose(arq);
+  	//carregar
+
+	fclose(arq);
 }
 
 int inserir(int qtd_livros_carregados){
@@ -468,7 +484,7 @@ void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_regist
 	//Colando flag de atualização em 1, pois arquivo foi reescrito
 	atualizado = 1;
 	fwrite(&atualizado, sizeof(int), 1, arq);
-	fseek(arq,8,0);
+	fwrite(&cont_chave_p, sizeof(int), 1, arq);
 	for(i = 0; i <= contador_insercao; i++)
 		fwrite(&est_isbn[i], sizeof(struct tipo_index), 1, arq);
 	fclose(arq);
@@ -477,7 +493,7 @@ void InserindoNoArquivoDeChavePrimaria(int contador_insercao, int posicao_regist
 void inserirNoArquivoChaveSecundaria(int contador_insercao, char autor[]){
 	char nome_arq[] = "arq_chave_s.bin", escrever[]= "wb";
 	FILE *arq;
-	int i = 0, atualizado, cont_chave_s, achou = 0;
+	int i = 0, atualizado,cont_chave_s, achou = 0;
 		
 	if((fopen(nome_arq, "r+b")) == NULL){
 		criar_arquivo(nome_arq);
@@ -487,7 +503,6 @@ void inserirNoArquivoChaveSecundaria(int contador_insercao, char autor[]){
 	abrir_arquivo(&arq, nome_arq, leitura);
 	fread(&atualizado, sizeof(int), 1, arq);
 	fread(&cont_chave_s, sizeof(int), 1, arq);
-	printf("\nteste do conta chave na insercao da chave s %d\n", cont_chave_s);// 0 esperado resultado
 	fclose(arq);
 	
 	//procurando se já possui um autor igual ao passado por paremetro 
@@ -511,7 +526,7 @@ void inserirNoArquivoChaveSecundaria(int contador_insercao, char autor[]){
 		est_autor[qtd_chave_s].p_list = inserir_lista_invertida(contador_insercao, arq_livros[contador_insercao].isbn, -1); 
 		strcpy(est_autor[qtd_chave_s].autor, autor);
 		//alterando flag de atualização, pois copia do arquivo em memoria foi modificada
-		abrir_arquivo(&arq, nome_arq, leitura);
+		abrir_arquivo(&arq, nome_arq, escrever);
 		atualizado = 0;
 		fseek(arq,0,0);
 		fwrite(&atualizado, sizeof(int), 1, arq);
@@ -527,7 +542,7 @@ void inserirNoArquivoChaveSecundaria(int contador_insercao, char autor[]){
 	//Colando flag de atualização em 1, pois arquivo foi reescrito
 	atualizado = 1;
 	fwrite(&atualizado, sizeof(int), 1, arq);
-	fseek(arq,8,0);
+	fwrite(&cont_chave_s, sizeof(int), 1, arq);
 	for(i = 0; i < qtd_chave_s; i++){		
 		fwrite(&est_autor[i], sizeof(index_autor), 1, arq);
 		printf("autor: %s\n", est_autor[i].autor);
@@ -561,7 +576,7 @@ int inserir_lista_invertida(int contador_insercao, char isbn[], int posicao_do_a
 	//escrevendo na lista invertida
 	abrir_arquivo(&arq, nome_arq, atualizar);
 	fwrite(&l_invertida[contador_insercao], sizeof(invertida), 1, arq);
-	fread(&cont_chave_s, sizeof(int), 1, arq);
+	//fread(&cont_chave_s, sizeof(int), 1, arq);
 	posicao = ftell(arq) - sizeof(invertida);					//pegando posicao do registro no arquivo
 	fclose(arq);
 	
