@@ -174,7 +174,7 @@ int criar_arquivo(char nome_arq[]){
 
 //carrega todos arquivos
 int carregar_arquivo(int resp){
-	char arq_cadastro[]="biblioteca.bin", arq_busca_p[]="busca_p.bin", arq_busca_s[]="busca_s.bin", abrir[] = "r+b";
+	char arq_cadastro[]="biblioteca.bin", arq_busca_p[]="busca_p.bin", arq_busca_s[]="busca_s.bin";
   	char arq_primaria[]= "arq_chave_p.bin", lista_invert[]="lista_invertida.bin";
   	FILE *arq;
   	int i, tam_vet_inserir = 0, todos=0;
@@ -185,7 +185,7 @@ int carregar_arquivo(int resp){
   	}
   	//abre arquivo biblioteca, carrega em vetor de struct 
   	if(resp == 1 || todos == 0){
-		if(abrir_arquivo(&arq, arq_cadastro, abrir)){
+		if(abrir_arquivo(&arq, arq_cadastro, leitura)){
 	  		i=0;
 	    	while(fread(&arq_livros[i], sizeof(livro), 1, arq)){
 	      		i++;  
@@ -196,7 +196,7 @@ int carregar_arquivo(int resp){
   	}
   	//abre arquivo busca_p.bin, carrega em vetor de struct 
   	if(resp == 2 || todos == 0){
-		if(abrir_arquivo(&arq, arq_busca_p, abrir)){
+		if(abrir_arquivo(&arq, arq_busca_p, leitura)){
 		    i=0;
 			while(fread(&busca_p[i], sizeof(struct buscaPrimaria), 1, arq)){
 				i++;
@@ -206,7 +206,7 @@ int carregar_arquivo(int resp){
   	} 
   	//abre arquivo busca_s.bin, carrega em vetor de struct 
   	if(resp == 3 || todos == 0){
-	  	if(abrir_arquivo(&arq, arq_busca_s, abrir)){
+	  	if(abrir_arquivo(&arq, arq_busca_s, leitura)){
 	    	i=0;
 			while(fread(&busca_s[i], sizeof(struct buscaSecundaria), 1, arq)){
 			  i++;
@@ -250,7 +250,7 @@ int carregar_arquivo(int resp){
 
 //faz o dump do arquivo passado por parametro.
 int exibir_arquivo(int resp){
-	char *pch, registro[119], arq_nome[16]="\0", abrir[] = "r+b";
+	char *pch, registro[119], arq_nome[16]="\0";
 	FILE *arq;
 	int cont_insercao,tam_reg,i;
 	system("cls");
@@ -264,7 +264,7 @@ int exibir_arquivo(int resp){
 	}else{
 		strcpy(arq_nome,"lista_invertida.bin");
 	}
-	abrir_arquivo(&arq, arq_nome, abrir);
+	abrir_arquivo(&arq, arq_nome, leitura);
 	if(resp == 1){	
 		fseek(arq, 4, 0);
 		tam_reg = pegar_registro(&arq,registro);
@@ -285,7 +285,7 @@ int exibir_arquivo(int resp){
 		fseek(arq, 8, 0);
 		while(fread(&est_isbn[i], sizeof(struct tipo_index) , 1, arq)){
 			printf("isbn: %s\n", est_isbn[i].isbn);
-			printf("posicao: %d\n", est_isbn[i].posicao);
+			printf("posicao: %d\n\n", est_isbn[i].posicao);
 			i++;
 		}
 	}else if(resp == 3){
@@ -293,14 +293,14 @@ int exibir_arquivo(int resp){
 		fseek(arq, 8, 0);
 		while(fread(&est_autor[i], sizeof(struct tipo_index_autor),1, arq)){
 			printf("autor: %s\n", est_autor[i].autor);
-			printf("posicao da lista: %d\n", est_autor[i].p_list);
+			printf("posicao da lista: %d\n\n", est_autor[i].p_list);
 			i++;
 		}
 	}else{
 		i = 0; 
 		while(fread(&l_invertida[i], sizeof(invertida) , 1, arq)){
 			printf("autor: %s\n", l_invertida[i].isbn);
-			printf("proximo: %d\n",l_invertida[i].prox);
+			printf("proximo: %d\n\n",l_invertida[i].prox);
 			i++;
 		}
 	}
@@ -311,7 +311,7 @@ int exibir_arquivo(int resp){
 	return 1;
 }
 
-//devolve o tamanho dos registros e obtem o registro
+//devolve o tamanho dos regisstros e obtem o registro
 int pegar_registro(FILE **p_arq, char *p_reg){
   int bytes;
      
@@ -325,14 +325,14 @@ int pegar_registro(FILE **p_arq, char *p_reg){
 void buscar_chave_primaria(){
   	FILE *arq;
   	int resp=2, cont_chave_p, i, cont_livros, tam_reg, atualizado, achou = 0;
-  	char abrir[] = "r+b", arquivo_livros[]= "livros.bin", arq_chave_p[]="arq_chave_p.bin";
+  	char arquivo_livros[]= "livros.bin", arq_chave_p[]="arq_chave_p.bin";
   	char *pch, registro[119];
   
   	//carrega arquivos arq_chave_p e busca_p no vetor de struct
   	carregar_arquivo(resp);
   	
   	//abre arq_chave_p pra pegar o contador de pesquisa do busca_p
-  	abrir_arquivo(&arq, arq_chave_p, abrir);
+  	abrir_arquivo(&arq, arq_chave_p, leitura);
   	fread(&atualizado, sizeof(int),1,arq);
   	printf("Atualizado: %d\n", atualizado);
   	fread(&cont_chave_p, sizeof(int),1,arq);
@@ -340,7 +340,7 @@ void buscar_chave_primaria(){
   	fclose(arq);
   	
   	//abre o arquivo de livros pra pesquisa
-  	abrir_arquivo(&arq, arquivo_livros, abrir);
+  	abrir_arquivo(&arq, arquivo_livros, leitura);
 		fread(&cont_livros, sizeof(int),1,arq);
 		
 	//se o arqivo não está atualizado com o arq principal ele reconstroi
@@ -374,7 +374,7 @@ void buscar_chave_primaria(){
 		
   	fclose(arq);
   	//abre arq_chave_p pra atualizar o contador da pesquisa
-  	if(abrir_arquivo(&arq, arq_chave_p, abrir)){
+  	if(abrir_arquivo(&arq, arq_chave_p, leitura)){
 	  	fseek(arq,4,0);
 	  	cont_chave_p++;
 	  	fwrite(&cont_chave_p,sizeof(int),1,arq);
@@ -386,7 +386,7 @@ void buscar_chave_primaria(){
 //faz a busca pela chave secundaria
 void buscar_chave_secundaria(){
 	FILE *arq, *arq_l;
-	int resp=3, cont_chave_s, i = 0, prox = 0, k, cont_livros, tam_reg, atualizado, compara = 1;
+	int resp=3, cont_chave_s, i = 0, j = 0, prox = 0, k, cont_livros, tam_reg, atualizado, compara = 1;
 	char arquivo_livros[]= "livros.bin", arq_chave_s[]="arq_chave_s.bin", arq_l_invertida[]="lista_invertida.bin";
 	char *pch, registro[119];
 	invertida aux;
@@ -414,41 +414,42 @@ void buscar_chave_secundaria(){
 	fread(&cont_livros, sizeof(int),1,arq);
 	printf("Autor a ser buscado: %s\n", busca_s[cont_chave_s].autor);
 	
-	while(i< qtd_chave_s && compara > 0){		
+	while(i < qtd_chave_s && compara > 0){		
 	
 		compara = strcmp(busca_s[cont_chave_s].autor,est_autor[i].autor);
 		if(compara == 0){		
 			printf("\nAutor encontrado\n");
 			printf("Os livros desse autor:\n");
 			if(abrir_arquivo(&arq_l, arq_l_invertida, leitura)){
-	  			fseek(arq_l, est_autor[i].p_list, 0);
-	  			
-	  			prox = 0;
-	  			while(prox != -1){
-	  				fread(&aux, sizeof(invertida), 1, arq_l);
-	  				printf("\nLivro:\n");
-	  				
+  			fseek(arq_l, est_autor[i].p_list, 0);
+  			
+  			prox = 0;
+  			while(prox != -1){
+  				fread(&aux, sizeof(invertida), 1, arq_l);
+  				printf("\nLivro %d:\n", j+1);
+  				
 					k=0;
-	  				while(k < cont_livros){
-	  					if(strcmp(aux.isbn, est_isbn[k].isbn) == 0){
-		  					fseek(arq, est_isbn[k].posicao, 0);
-					  		tam_reg = pegar_registro(&arq, registro);
-								pch = strtok(registro,"|");
-								while (pch != NULL){
-									printf("- %s\n",pch);
-									pch = strtok(NULL,"|");
-								}
+  				while(k < cont_livros){
+  					if(strcmp(aux.isbn, est_isbn[k].isbn) == 0){
+	  					fseek(arq, est_isbn[k].posicao, 0);
+				  		tam_reg = pegar_registro(&arq, registro);
+							pch = strtok(registro,"|");
+							while (pch != NULL){
+								printf("- %s\n",pch);
+								pch = strtok(NULL,"|");
 							}
-	  					k++;
-	  				}
-	  				
-	  				prox = aux.prox;
-						  				
-	  				if(prox != -1){
-	  					fseek(arq_l, prox, 0);
+						}
+  					k++;
+  				}
+  				
+  				prox = aux.prox;
+					  				
+  				if(prox != -1){
+  					fseek(arq_l, prox, 0);
 					}
-	  			}
-  				fclose(arq_l);
+					j++;
+  			}
+  			fclose(arq_l);
 			}
 		}
 		i++;
@@ -474,7 +475,7 @@ void buscar_chave_secundaria(){
 int inserir(int qtd_livros_carregados){
 	FILE *arq; 
 	int cont_registro, tam_registro, posicao_registro;
-	char registro[119], nome_arq[]="livros.bin", leitura[]= "r+b", atualizar[] = "a+b";
+	char registro[119], nome_arq[]="livros.bin";
 	
 	system("cls");
 	
@@ -493,10 +494,10 @@ int inserir(int qtd_livros_carregados){
   
   if(cont_registro < qtd_livros_carregados){
 	 	arq = fopen("livros.bin", atualizar);					//abrindo arquivo para atualizar
-	  	//formatando os registros para a estrategia de tamanho variavel a partir do i que voltou do arquivo
-	  	sprintf(registro,"%s|%s|%s|%s|", arq_livros[cont_registro].isbn, arq_livros[cont_registro].titulo, 
-															arq_livros[cont_registro].autor, arq_livros[cont_registro].ano);
-	  	tam_registro = strlen(registro); //pega o tamanho de cada registro
+  	//formatando os registros para a estrategia de tamanho variavel a partir do i que voltou do arquivo
+  	sprintf(registro,"%s|%s|%s|%s|", arq_livros[cont_registro].isbn, arq_livros[cont_registro].titulo, 
+														arq_livros[cont_registro].autor, arq_livros[cont_registro].ano);
+  	tam_registro = strlen(registro); //pega o tamanho de cada registro
 		tam_registro++;
 		printf("registro na funcao inserir:  %s\n", registro);
 		printf("tamanho registro na funcao inserir: %d\n\n", tam_registro);
@@ -527,7 +528,7 @@ int inserir(int qtd_livros_carregados){
 
 //insere no arquivo de chave primaria
 void inserir_arq_chave_primaria(int contador_insercao, int posicao_registro){
-	char nome_arq[] = "arq_chave_p.bin", atualizar[] = "ab", leitura[] = "r+b", escrever[] = "wb"; 
+	char nome_arq[] = "arq_chave_p.bin"; 
 	FILE *arq;
 	int i, atualizado, cont_chave_p;
 	
@@ -557,7 +558,7 @@ void inserir_arq_chave_primaria(int contador_insercao, int posicao_registro){
 
 //insere no arquivo de chave secundaria
 void inserir_arq_chave_secundaria(int contador_insercao, char autor[]){
-	char nome_arq[] = "arq_chave_s.bin", escrever[]= "wb";
+	char nome_arq[] = "arq_chave_s.bin";
 	FILE *arq;
 	int i = 0, atualizado,cont_chave_s, achou = 0;
 		
