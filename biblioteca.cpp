@@ -330,7 +330,7 @@ int pegar_registro(FILE **p_arq, char *p_reg){
 
 void buscaPrimaria(){
   	FILE *arq;
-  	int resp=2, cont_chave_p, i, cont_livros, tam_reg, atualizado;
+  	int resp=2, cont_chave_p, i, cont_livros, tam_reg, atualizado, achou = 0;
   	char abrir[] = "r+b", arquivo_livros[]= "livros.bin", arq_chave_p[]="arq_chave_p.bin";
   	char *pch, registro[119];
   
@@ -357,11 +357,11 @@ void buscaPrimaria(){
 		printf("ISBN a ser buscado: %s\n", busca_p[cont_chave_p].isbn);
   	
   	i=0;
-  	while(i < cont_livros){
+  	while(i < cont_livros && achou != 1){
   		if(strcmp(busca_p[cont_chave_p].isbn, est_isbn[i].isbn) == 0){
-  			printf("ISBN encontrado!!\n");
+  			printf("\nISBN encontrado!!\n");
   			printf("Livro:\n");
-  			
+  			achou = 1;
 	  		fseek(arq,est_isbn[i].posicao,0);
 	  		tam_reg = pegar_registro(&arq,registro);
 				pch = strtok(registro,"|");
@@ -373,6 +373,11 @@ void buscaPrimaria(){
   		}
   		i++;
   	}
+  	
+  	if(achou == 0){
+  		printf("\nISBN %s nao encontrado!!\n", busca_p[cont_chave_p].isbn);
+		}
+		
   	fclose(arq);
   	//abre arq_chave_p pra atualizar o contador da pesquisa
   	if(abrir_arquivo(&arq, arq_chave_p, abrir)){
